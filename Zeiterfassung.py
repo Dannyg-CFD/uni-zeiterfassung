@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import csv
+import re
+import unicodedata
 from datetime import date
 
 # Definiere die Liste der Nutzer (passe das an dein Team an!)
@@ -10,14 +13,58 @@ users = ['Daniel Gißibl', 'Marc Summer', 'Adrian Sollereder', 'Severin Stangl',
 # Datei für Daten (CSV)
 DATA_FILE = 'zeiterfassung.csv'
 
-# Lade Daten, falls Datei existiert
+# Lade Daten, falls Datei existiert.
+# Use semicolon as the canonical separator to avoid issues when descriptions contain commas.
 if os.path.exists(DATA_FILE):
-    df = pd.read_csv(DATA_FILE)
+    # Try reading as semicolon-separated first (our preferred format)
+    try:
+        df = pd.read_csv(DATA_FILE, sep=';', encoding='utf-8')
+        # If expected columns are missing, try reading with comma separator and then normalize.
+        if not set(['Name', 'Datum', 'Stunden', 'Beschreibung']).issubset(df.columns):
+            df = pd.read_csv(DATA_FILE, sep=',', encoding='utf-8')
+            # normalize to semicolon-separated file for future runs
+            df.to_csv(DATA_FILE, index=False, sep=';', encoding='utf-8', quoting=csv.QUOTE_MINIMAL)
+    except Exception:
+        # Last resort: try comma-separated and normalize
+        df = pd.read_csv(DATA_FILE, sep=',', encoding='utf-8', engine='python')
+        df.to_csv(DATA_FILE, index=False, sep=';', encoding='utf-8', quoting=csv.QUOTE_MINIMAL)
 else:
     df = pd.DataFrame(columns=['Name', 'Datum', 'Stunden', 'Beschreibung'])
 
 # Streamlit App
 st.title('Uni-Team Zeiterfassung')
+
+
+def sanitize_text(s: str) -> str:
+    """Remove emojis and control characters from a string.
+
+    Keeps common letters, numbers, punctuation and whitespace. Removes
+    characters from known emoji Unicode ranges and ASCII control chars.
+    """
+    if s is None:
+        return ''
+    # Normalize to NFC
+    s = unicodedata.normalize('NFC', str(s))
+
+    # Remove ASCII control characters
+    s = re.sub(r"[\x00-\x1F\x7F]", '', s)
+
+    # Remove common emoji ranges
+    emoji_pattern = re.compile(
+        "[\U0001F600-\U0001F64F"  # emoticons
+        "\U0001F300-\U0001F5FF"  # symbols & pictographs
+        "\U0001F680-\U0001F6FF"  # transport & map symbols
+        "\U0001F1E0-\U0001F1FF"  # flags
+        "\U00002700-\U000027BF"  # dingbats
+        "\U000024C2-\U0001F251"
+        "]+",
+        flags=re.UNICODE
+    )
+    s = emoji_pattern.sub('', s)
+
+    # Collapse multiple whitespace/newlines into single space
+    s = re.sub(r"\s+", ' ', s).strip()
+    return s
 
 # Formular für neuen Eintrag
 with st.form(key='eintrag_form'):
@@ -31,8 +78,14 @@ with st.form(key='eintrag_form'):
     submit = st.form_submit_button('Eintragen')
 
     if submit:
-        if name and datum and stunden:
-            new_entry = pd.DataFrame({'Name': [name], 'Datum': [datum], 'Stunden': [stunden], 'Beschreibung': [beschreibung]})
+        if name and datum and stunden is not None:
+            # Sanitize description before saving
+            orig_beschreibung = beschreibung
+            safe_beschreibung = sanitize_text(beschreibung)
+            if safe_beschreibung != (orig_beschreibung or ''):
+                st.info('Die Beschreibung wurde bereinigt: Emojis oder Steuerzeichen wurden entfernt.')
+
+            new_entry = pd.DataFrame({'Name': [name], 'Datum': [datum], 'Stunden': [stunden], 'Beschreibung': [safe_beschreibung]})
             df = pd.concat([df, new_entry], ignore_index=True)
             df.to_csv(DATA_FILE, index=False)
             st.success(f'Eintrag für {name} am {datum} gespeichert!')
