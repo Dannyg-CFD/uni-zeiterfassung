@@ -8,7 +8,7 @@ import unicodedata
 from datetime import date
 
 # Definiere die Liste der Nutzer (passe das an dein Team an!)
-users = ['Daniel Gißibl', 'Marc Summer', 'Adrian Sollereder', 'Severin Stangl', 'Maximilian Brünn', 'Maximilian Chemnitz', 'Simon Huber', 'Michael Hüllmantl', 'Christoph Kögst', 'Iheb Marzougui', 'Marco Osendorfer', 'Michael Schreiber', 'Roshan Thakur', 'Aysel Yavuz']  # Hier deine echten Namen eintragen
+users = ['Maximilian Gansky','Daniel Gißibl', 'Marc Summer', 'Adrian Sollereder', 'Severin Stangl', 'Maximilian Brünn', 'Maximilian Chemnitz', 'Simon Huber', 'Michael Hüllmantl', 'Christoph Kögst', 'Iheb Marzougui', 'Marco Osendorfer', 'Michael Schreiber', 'Roshan Thakur', 'Aysel Yavuz']  # Hier deine echten Namen eintragen
 
 # Datei für Daten (CSV)
 DATA_FILE = 'zeiterfassung.csv'
@@ -165,5 +165,6 @@ if not df.empty:
 
         # Center text with absolute hours
         ax2.text(0, 0, f'{total_hours:.1f}h\ninsgesamt', ha='center', va='center', color='white', fontsize=10)
+
 
         st.pyplot(fig2)
