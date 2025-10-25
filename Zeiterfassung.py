@@ -100,7 +100,42 @@ with st.form(key='eintrag_form'):
             new_entry = pd.DataFrame({'Name': [name], 'Datum': [datum], 'Stunden': [stunden], 'Beschreibung': [safe_beschreibung]})
             df = pd.concat([df, new_entry], ignore_index=True)
             df.to_csv(DATA_FILE, index=False)
-            st.success(f'Eintrag für {name} am {datum} gespeichert!')
+            
+            try:
+                import os
+                from github import Github
+                
+                # GitHub Authentifizierung über Environment Variable
+                github_token = os.getenv('GITHUB_TOKEN')
+                if github_token:
+                    g = Github(github_token)
+                    repo = g.get_repo("Dannyg-CFD/uni-zeiterfassung")
+                    
+                    # Aktuelle Datei lesen
+                    file_content = df.to_csv(index=False)
+                    
+                    try:
+                        # Versuche die Datei zu aktualisieren
+                        contents = repo.get_contents("zeiterfassung.csv")
+                        repo.update_file(
+                            contents.path,
+                            f"Update Zeiterfassung durch {name}",
+                            file_content,
+                            contents.sha
+                        )
+                    except Exception as e:
+                        # Falls die Datei noch nicht existiert, erstelle sie
+                        repo.create_file(
+                            "zeiterfassung.csv",
+                            f"Erste Zeiterfassung durch {name}",
+                            file_content
+                        )
+                    
+                    st.success(f'Eintrag für {name} am {datum} gespeichert und mit GitHub synchronisiert!')
+                else:
+                    st.success(f'Eintrag für {name} am {datum} gespeichert! (GitHub-Sync deaktiviert)')
+            except Exception as e:
+                st.warning(f'Eintrag gespeichert, aber GitHub-Sync fehlgeschlagen: {str(e)}')
         else:
             st.error('Fülle alle Pflichtfelder aus (Name, Datum, Stunden)!')
 
