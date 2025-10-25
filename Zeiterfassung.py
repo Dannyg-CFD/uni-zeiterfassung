@@ -10,8 +10,20 @@ from datetime import date
 # Definiere die Liste der Nutzer (passe das an dein Team an!)
 users = ['Maximilian Gansky','Daniel Gißibl', 'Marc Summer', 'Adrian Sollereder', 'Severin Stangl', 'Maximilian Brünn', 'Maximilian Chemnitz', 'Simon Huber', 'Michael Hüllmantl', 'Christoph Kögst', 'Iheb Marzougui', 'Marco Osendorfer', 'Michael Schreiber', 'Roshan Thakur', 'Aysel Yavuz']  # Hier deine echten Namen eintragen
 
-# Datei für Daten (CSV)
-DATA_FILE = 'zeiterfassung.csv'
+# Datei für Daten (CSV) mit absolutem Pfad
+import pathlib
+current_dir = pathlib.Path(__file__).parent.absolute()
+DATA_FILE = str(current_dir / 'zeiterfassung.csv')
+
+# Keep-alive Mechanismus
+def keep_alive():
+    import time
+    while True:
+        time.sleep(60)  # Ping alle 60 Sekunden
+        st.experimental_rerun()
+
+import threading
+threading.Thread(target=keep_alive, daemon=True).start()
 
 # Lade Daten, falls Datei existiert.
 # Use semicolon as the canonical separator to avoid issues when descriptions contain commas.
