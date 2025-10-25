@@ -70,9 +70,9 @@ def sanitize_text(s: str) -> str:
 with st.form(key='eintrag_form'):
     st.subheader('Eintrag hinzufügen')
     name = st.selectbox('Wähle deinen Namen', users)  # Dropdown-Menü
-    today = date.today()  # Heutiges Datum: 2025-10-03
-    end_date = date(2026, 2, 28)  # Ende Februar 2026 (anpassen, falls nötig)
-    datum = st.date_input('Datum', min_value=today, max_value=end_date)
+    start_date = date(2025, 10, 1)  # 1. Oktober 2025
+    end_date = date(2026, 1, 26)  # 26. Januar 2026
+    datum = st.date_input('Datum', min_value=start_date, max_value=end_date)
     stunden = st.number_input('Stunden', min_value=0.0, max_value=24.0, step=0.5)
     beschreibung = st.text_area('Was hast du gearbeitet?')
     submit = st.form_submit_button('Eintragen')
